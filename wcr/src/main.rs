@@ -113,11 +113,8 @@ fn run(mut args: Args) -> Result<()> {
           Err(err) => eprintln!("{filename}: {err}"),
           Ok(file_info) => {
             print_file_info(&file_info, &args);
-
             total_info.add(&file_info);
-
             println!("{}", if filename != "-" { format!(" {filename}") } else { String::new() });
-            // println!("{:>8}{:>8}{:>8} {filename}", file_info.num_lines, file_info.num_words, file_info.num_bytes);
           }
         }
       }
