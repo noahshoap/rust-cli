@@ -37,48 +37,23 @@ fn run(args: Args) -> Result<()> {
   let mut count = 0;
 
   loop {
-    let mut equals_last = false;
     let bytes = file.read_line(&mut line)?;
-    eprintln!("{line} count == {count}, bytes == {bytes}");
-
-    if line.ends_with('\n') {
-      line.pop(); // remove \n
-      equals_last = line == prev_line;
-      if line.ends_with('\r') {
-          line.pop(); // remove \r
-          equals_last = line == prev_line;
-          line.push('\r');
-      }
-      line.push('\n');
-    } else {
-      line.push('\n');
-      equals_last = line == prev_line;
-      line.pop();
-    }
-    
-
-    eprintln!("{equals_last}");
 
     if bytes == 0 {
       if prev_line.is_empty() == false {
-        eprintln!("writing {count} {line}");
         if let Err(e) = write_output(&mut output, &prev_line, if args.count { Some(count) } else { None }) {
           eprintln!("{e}");
         }
       }
-      eprintln!("breaking");
       break;
     }
 
-    eprintln!("{line} count == {count}");
-
-    match line == prev_line {
+    match line.trim_end() == prev_line.trim_end() {
       true => {
         count += 1;
       },
       _ => {
         if prev_line.is_empty() == false {
-          eprintln!("writing {count} {line}");
           if let Err(e) = write_output(&mut output, &prev_line, if args.count { Some(count) } else { None }) {
             eprintln!("{e}");
           }
@@ -87,8 +62,6 @@ fn run(args: Args) -> Result<()> {
         count = 1;
       },
     }
-
-    eprintln!("after: {line} count == {count}");
 
     line.clear();
   }

@@ -1,0 +1,28 @@
+   Compiling uniqr v0.1.0 (/Users/noah/Code/RustCLI/uniqr)
+warning: value assigned to `equals_last` is never read
+  --> src/main.rs:40:13
+   |
+40 |     let mut equals_last = false;
+   |             ^^^^^^^^^^^
+   |
+   = help: maybe it is overwritten before being read?
+   = note: `#[warn(unused_assignments)]` on by default
+
+warning: `uniqr` (bin "uniqr") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.88s
+     Running `target/debug/uniqr -c tests/inputs/t2.txt`
+a
+ count == 0, bytes == 2
+false
+a
+ count == 0
+after: a
+ count == 1
+a count == 1, bytes == 1
+true
+a count == 1
+after: a count == 2
+ count == 2, bytes == 0
+false
+writing 2 
+breaking
