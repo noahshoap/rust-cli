@@ -1,8 +1,7 @@
 use clap::{Parser, builder::PossibleValue, ValueEnum, ArgAction};
 use regex::Regex;
 use anyhow::Result;
-use walkdir::WalkDir;
-use std::fs::FileType;
+use walkdir::{WalkDir, DirEntry};
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 enum EntryType {
@@ -48,49 +47,40 @@ fn main() {
 }
 
 fn run(args: Args) -> Result<()> {
-  for path in args.paths {
-    for entry in WalkDir::new(path) {
-      match entry {
-        Err(e) => eprintln!("{e}"),
-        Ok(entry) => {
-          let types = &args.entry_types;
-          let names = &args.names;
-          let file_type = entry.file_type();
-          let file_name = entry.file_name().to_string_lossy();
+  let type_filter = |entry: &DirEntry| {
+    args.entry_types.is_empty() || 
+    args.entry_types
+      .iter()
+      .any(|entry_type| match entry_type {
+        EntryType::Link => entry.file_type().is_symlink(),
+        EntryType::Dir => entry.file_type().is_dir(),
+        EntryType::File => entry.file_type().is_file(),
+      })
+  };
 
-          if matches_name_filter(&names, file_name.to_string()) && matches_type_filter(&types, file_type) {
-            println!("{}", entry.path().display());
-          }
+  let name_filter = |entry: &DirEntry| {
+    args.names.is_empty() ||
+    args.names
+      .iter()
+      .any(|regex| regex.is_match(&entry.file_name().to_string_lossy()))
+  };
+
+  for path in args.paths {
+    let entries = WalkDir::new(path)
+      .into_iter()
+      .filter_map(|e| match e {
+        Err(e) => {
+          eprintln!("{e}");
+          None
         }
-      }
-    }
+        Ok(entry) => Some(entry),
+      })
+      .filter(type_filter)
+      .filter(name_filter)
+      .map(|entry| entry.path().display().to_string())
+      .collect::<Vec<_>>();
+
+      println!("{}", entries.join("\n"));
   }
   Ok(())
-}
-
-// The author of the book wrote the following two methods as one large conditional in the above method.
-// If this is considered good Rust, then I don't want to write good Rust.
-
-fn matches_name_filter(names: &Vec<Regex>, file_name: String) -> bool {
-  if names.is_empty() {
-    return true;
-  }
-
-  return names.iter().any(|regex| {
-    regex.is_match(&file_name)
-  })
-}
-
-fn matches_type_filter(types: &Vec<EntryType>, file_type: FileType) -> bool {
-  if types.is_empty() {
-    return true;
-  }
-
-  return types.iter().any(|filterType| {
-    match filterType {
-      EntryType::Link => file_type.is_symlink(),
-      EntryType::Dir => file_type.is_dir(),
-      EntryType::File => file_type.is_file(),
-    }
-  });
 }
